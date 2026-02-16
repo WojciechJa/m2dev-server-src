@@ -1621,6 +1621,10 @@ void CHARACTER::PointsPacket()
 
 	for (int i = POINT_IQ + 1; i < POINT_MAX_NUM; ++i)
 		pack.points[i] = GetPoint(i);
+	
+#ifdef ENABLE_ASLAN_MODULAR_ADMIN_PANEL
+	pack.points[POINT_GM_LEVEL] = GetGMLevel();
+#endif
 
 	GetDesc()->Packet(&pack, sizeof(TPacketGCPoints));
 }

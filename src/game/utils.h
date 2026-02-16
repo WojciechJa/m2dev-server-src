@@ -55,7 +55,32 @@ extern void	skip_spaces(char **string);
 
 extern const char *	one_argument(const char *argument, char *first_arg, size_t first_size);
 extern const char *	two_arguments(const char *argument, char *first_arg, size_t first_size, char *second_arg, size_t second_size);
+extern const char * three_arguments(const char* argument, char* first_arg, size_t first_size, char* second_arg, size_t second_size, char* third_flag, size_t third_size);
 extern const char *	first_cmd(const char *argument, char *first_arg, size_t first_arg_size, size_t *first_arg_len_result);
+
+#ifdef ADMINPANEL_MOD_CREATE_ITEM_ASLAN
+extern const char* adminpanel_create_item_arguments(const char* argument, char* vnum_arg, size_t vnum_size,
+	char* count_arg, size_t count_size,
+	char* socket0_arg, size_t socket0_size,
+	char* socket1_arg, size_t socket1_size,
+	char* socket2_arg, size_t socket2_size,
+	char* applytype0_arg, size_t applytype0_size,
+	char* applyvalue0_arg, size_t applyvalue0_size,
+	char* applytype1_arg, size_t applytype1_size,
+	char* applyvalue1_arg, size_t applyvalue1_size,
+	char* applytype2_arg, size_t applytype2_size,
+	char* applyvalue2_arg, size_t applyvalue2_size,
+	char* applytype3_arg, size_t applytype3_size,
+	char* applyvalue3_arg, size_t applyvalue3_size,
+	char* applytype4_arg, size_t applytype4_size,
+	char* applyvalue4_arg, size_t applyvalue4_size,
+	char* applytype5_arg, size_t applytype5_size,
+	char* applyvalue5_arg, size_t applyvalue5_size,
+	char* applytype6_arg, size_t applytype6_size,
+	char* applyvalue6_arg, size_t applyvalue6_size,
+	char* playername_arg, size_t playername_size
+);
+#endif
 
 extern int CalculateDuration(int iSpd, int iDur);
 

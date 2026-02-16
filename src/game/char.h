@@ -286,6 +286,10 @@ enum EPointTypes
 
 	POINT_RESIST_CRITICAL = 136,		// 크리티컬 저항	: 상대의 크리티컬 확률을 감소
 	POINT_RESIST_PENETRATE = 137,		// 관통타격 저항	: 상대의 관통타격 확률을 감소
+	
+#ifdef ENABLE_ASLAN_MODULAR_ADMIN_PANEL
+	POINT_GM_LEVEL = 240,
+#endif
 
 	//POINT_MAX_NUM = 129	common/length.h
 };

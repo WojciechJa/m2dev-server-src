@@ -35,6 +35,10 @@
 #include "unique_item.h"
 #include "DragonSoul.h"
 
+#ifdef __JACK_WRESTLER_FAKE_PLAYER__
+	#include "FakePlayerManager.h"
+#endif
+
 extern bool DropEvent_RefineBox_SetValue(const std::string& name, int value);
 
 // ADD_COMMAND_SLOW_STUN
@@ -4259,3 +4263,979 @@ ACMD (do_ds_list)
 			ch->ChatPacket(CHAT_TYPE_INFO, "cell : %d, name : %s, id : %d", item->GetCell(), item->GetName(), item->GetID());
 	}
 }
+
+#ifdef ENABLE_ASLAN_MODULAR_ADMIN_PANEL
+ACMD(do_adminpanel_get_player_count)
+{
+	int iTotal;
+	int* paiEmpireUserCount;
+	int iLocal;
+
+	DESC_MANAGER::instance().GetUserCount(iTotal, &paiEmpireUserCount, iLocal);
+
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelGetPlayerCount %d %d %d %d", paiEmpireUserCount[1], paiEmpireUserCount[2], paiEmpireUserCount[3], iTotal);
+}
+#endif
+
+#ifdef ADMINPANEL_MOD_CREATE_ITEM_ASLAN
+ACMD(do_adminpanel_create_item)
+{
+	char vnum[256], count[256], socket0[256], socket1[256], socket2[256], attrtype0[256], attrvalue0[256], attrtype1[256], attrvalue1[256], attrtype2[256], attrvalue2[256], attrtype3[256], attrvalue3[256], attrtype4[256], attrvalue4[256], attrtype5[256], attrvalue5[256], attrtype6[256], attrvalue6[256], playername[256];
+	adminpanel_create_item_arguments(argument, vnum, sizeof(vnum), count, sizeof(count), 
+		socket0, sizeof(socket0), socket1, sizeof(socket1), socket2, sizeof(socket2),
+		attrtype0, sizeof(attrtype0), attrvalue0, sizeof(attrvalue0),
+		attrtype1, sizeof(attrtype1), attrvalue1, sizeof(attrvalue1),
+		attrtype2, sizeof(attrtype2), attrvalue2, sizeof(attrvalue2),
+		attrtype3, sizeof(attrtype3), attrvalue3, sizeof(attrvalue3),
+		attrtype4, sizeof(attrtype4), attrvalue4, sizeof(attrvalue4),
+		attrtype5, sizeof(attrtype5), attrvalue5, sizeof(attrvalue5),
+		attrtype6, sizeof(attrtype6), attrvalue6, sizeof(attrvalue6),
+		playername, sizeof(playername)
+	);
+
+	DWORD dwVnum;
+	int iCount = 1;
+
+	LPCHARACTER tch = NULL;
+
+	if (*playername) {
+		tch = CHARACTER_MANAGER::instance().FindPC(playername);
+		if (!tch) {
+			ch->ChatPacket(CHAT_TYPE_INFO, "%s not exist", playername);
+			return;
+		}
+	}
+
+	if (isnhdigit(*vnum))
+		str_to_number(dwVnum, vnum);
+	else {
+		if (!ITEM_MANAGER::instance().GetVnum(vnum, dwVnum))
+		{
+			ch->ChatPacket(CHAT_TYPE_INFO, "#%u item not exist by that vnum.", dwVnum);
+			return;
+		}
+	}
+
+	str_to_number(iCount, count);
+	iCount = MINMAX(1, iCount, ITEM_MAX_COUNT);
+
+	LPITEM item = ITEM_MANAGER::instance().CreateItem(dwVnum, iCount, 0, true);
+
+	if (item)
+	{
+		if (item->IsDragonSoul()) {
+			int iEmptyPos = ch->GetEmptyDragonSoulInventory(item);
+			if (tch)
+				iEmptyPos = tch->GetEmptyDragonSoulInventory(item);
+
+			if (iEmptyPos != -1) {
+				if (tch) {
+					item->AddToCharacter(tch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+					tch->ChatPacket(CHAT_TYPE_INFO, "Du hast von einem Teammitglied %s erhalten!", item->GetName());
+					ch->ChatPacket(CHAT_TYPE_INFO, "%s erfolgreich erstellt und an %s gesendet!", item->GetName(), ch->GetName());
+				}
+				else {
+					item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+				}
+			}
+			else {
+				M2_DESTROY_ITEM(item);
+				if (!ch->DragonSoul_IsQualified())
+					ch->ChatPacket(CHAT_TYPE_INFO, "Your not qualified for dragonsoul.");
+				else
+					ch->ChatPacket(CHAT_TYPE_INFO, "Not enough inventory space.");
+			}
+		}
+		else
+		{
+#ifdef ENABLE_SPECIAL_INVENTORY
+			int iEmptyPos = ch->GetEmptyInventory(item);
+			if (tch)
+				iEmptyPos = tch->GetEmptyInventory(item);
+#else
+			int iEmptyPos = ch->GetEmptyInventory(item->GetSize());
+			if (tch)
+				iEmptyPos = tch->GetEmptyInventory(item->GetSize());
+#endif
+			if (iEmptyPos != -1) {
+				int iSocket0, iSocket1, iSocket2, iAttrType0, iAttrValue0, iAttrType1, iAttrValue1, iAttrType2, iAttrValue2, iAttrType3, iAttrValue3, iAttrType4, iAttrValue4, iAttrType5, iAttrValue5, iAttrType6, iAttrValue6;
+				str_to_number(iSocket0, socket0); str_to_number(iSocket1, socket1); str_to_number(iSocket2, socket2);
+				str_to_number(iAttrType0, attrtype0); str_to_number(iAttrValue0, attrvalue0);
+				str_to_number(iAttrType1, attrtype1); str_to_number(iAttrValue1, attrvalue1);
+				str_to_number(iAttrType2, attrtype2); str_to_number(iAttrValue2, attrvalue2);
+				str_to_number(iAttrType3, attrtype3); str_to_number(iAttrValue3, attrvalue3);
+				str_to_number(iAttrType4, attrtype4); str_to_number(iAttrValue4, attrvalue4);
+				str_to_number(iAttrType5, attrtype5); str_to_number(iAttrValue5, attrvalue5);
+				str_to_number(iAttrType6, attrtype6); str_to_number(iAttrValue6, attrvalue6);
+
+
+				if (item->IsAccessoryForSocket()) {
+					if (iSocket0 > 0) {
+						item->SetSocket(0, iSocket0);
+						item->SetSocket(1, 3);
+					}
+					int iDownTime = aiAccessorySocketDegradeTime[item->GetAccessorySocketGrade()];
+					item->SetAccessorySocketDownGradeTime(iDownTime);
+				}
+				else {
+					if (iSocket0 > 0)
+						item->SetSocket(0, iSocket0);
+					if (iSocket1 > 0)
+						item->SetSocket(1, iSocket1);
+					if (iSocket2 > 0)
+						item->SetSocket(2, iSocket2);
+				}
+
+				item->SetForceAttribute(0, iAttrType0, iAttrValue0);
+				item->SetForceAttribute(1, iAttrType1, iAttrValue1);
+				item->SetForceAttribute(2, iAttrType2, iAttrValue2);
+				item->SetForceAttribute(3, iAttrType3, iAttrValue3);
+				item->SetForceAttribute(4, iAttrType4, iAttrValue4);
+				item->SetForceAttribute(5, iAttrType5, iAttrValue5);
+				item->SetForceAttribute(6, iAttrType6, iAttrValue6);
+
+				if (tch) {
+					item->AddToCharacter(tch, TItemPos(INVENTORY, iEmptyPos));
+					tch->ChatPacket(CHAT_TYPE_INFO, "Du hast von %s - %s erhalten!", ch->GetName(), item->GetName());
+					ch->ChatPacket(CHAT_TYPE_INFO, "%s erfolgreich erstellt und an %s gesendet!", item->GetName(), tch->GetName());
+				}
+				else {
+					item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+					ch->ChatPacket(CHAT_TYPE_INFO, "%s erfolgreich erstellt!", item->GetName());
+				}
+			}
+			else {
+				M2_DESTROY_ITEM(item);
+				ch->ChatPacket(CHAT_TYPE_INFO, "Not enough inventory space.");
+			}
+		}
+	}
+	else
+		ch->ChatPacket(CHAT_TYPE_INFO, "#%u item not exist by that vnum.", dwVnum);
+}
+#endif
+
+#ifdef __JACK_WRESTLER_FAKE_PLAYER__
+ACMD (do_fake_player)
+{
+	char arg1[256], arg2[256];
+	two_arguments (argument, arg1, sizeof (arg1), arg2, sizeof (arg2));
+
+	if (!*arg1 || !*arg2)
+	{
+		ch->ChatPacket (CHAT_TYPE_INFO, "usage: fake_player login <name>");
+		ch->ChatPacket (CHAT_TYPE_INFO, "usage: fake_player logout <name>");
+		return;
+	}
+
+	if (0 == strcmp (arg1, "login"))
+	{
+		TFakePlayerLoginData fakePlayerLoginData;
+		strlcpy (fakePlayerLoginData.szName, arg2, sizeof (fakePlayerLoginData.szName));
+		fakePlayerLoginData.lMapIndex = ch->GetMapIndex();
+		fakePlayerLoginData.lX = ch->GetX();
+		fakePlayerLoginData.lY = ch->GetY();
+		fakePlayerLoginData.iRotation = ch->GetRotation();
+
+		CFakePlayerManager::Instance().FakePlayerLogin (ch, &fakePlayerLoginData);
+	}
+	else if (0 == strcmp (arg1, "logout"))
+	{
+		CFakePlayerManager::Instance().FakePlayerLogout (arg2, ch);
+	}
+}
+
+// Admin Panel Fake Player Commands
+ACMD(do_adminpanel_fakeplayer_list)
+{
+	// Get all fake players from database
+	char szQuery[512];
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT name, race+0, level, empire+0 FROM fake_player ORDER BY name ASC");
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+	if (!pMsg->Get()->pSQLResult)
+	{
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList BEGIN 0");
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList END");
+		return;
+	}
+
+	MYSQL_ROW row;
+	const int total = (int)pMsg->Get()->uiNumRows;
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList BEGIN %d", total);
+
+	std::string chunk = "";
+	int chunkCount = 0;
+	const size_t maxChunkLen = 400;
+
+	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	{
+		std::string name = row[0];
+		int race = atoi(row[1]);
+		int level = atoi(row[2]);
+		int empire = atoi(row[3]);
+
+		// Check if this fake player is currently active
+		int active = CFakePlayerManager::Instance().IsFakePlayerActive(name) ? 1 : 0;
+
+		char buf[256];
+		snprintf(buf, sizeof(buf), "%s|%d|%d|%d|%d", name.c_str(), race, level, empire, active);
+
+		// Flush chunk if it would exceed size
+		if (!chunk.empty() && (chunk.length() + 1 + strlen(buf)) > maxChunkLen)
+		{
+			ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList CHUNK %d %s", chunkCount, chunk.c_str());
+			chunk.clear();
+			chunkCount = 0;
+		}
+
+		if (!chunk.empty())
+			chunk += " ";
+		chunk += buf;
+		++chunkCount;
+	}
+
+	if (!chunk.empty())
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList CHUNK %d %s", chunkCount, chunk.c_str());
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerList END");
+}
+
+ACMD(do_adminpanel_fakeplayer_active)
+{
+	// Get list of currently active (logged in) fake players
+	std::vector<std::pair<std::string, LPCHARACTER>> vecActive;
+	CFakePlayerManager::Instance().GetActiveFakePlayers(vecActive);
+
+	std::string result = "";
+	int count = 0;
+
+	for (const auto& pair : vecActive)
+	{
+		LPCHARACTER pFakePlayer = pair.second;
+		if (!pFakePlayer)
+			continue;
+
+		if (count > 0)
+			result += " ";
+
+		char buf[256];
+		snprintf(buf, sizeof(buf), "%s|%ld|%ld|%ld",
+			pair.first.c_str(),
+			pFakePlayer->GetMapIndex(),
+			pFakePlayer->GetX(),
+			pFakePlayer->GetY());
+		result += buf;
+		count++;
+	}
+
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerActive %d %s", count, result.c_str());
+}
+
+ACMD(do_adminpanel_fakeplayer_create)
+{
+	// Arguments: name race level empire st ht dx iq alignment guild_id language
+	char arg1[256], arg2[256], arg3[256], arg4[256], arg5[256];
+	char arg6[256], arg7[256], arg8[256], arg9[256], arg10[256], arg11[256];
+
+	const char* line = one_argument(argument, arg1, sizeof(arg1));  // name
+	line = one_argument(line, arg2, sizeof(arg2));   // race
+	line = one_argument(line, arg3, sizeof(arg3));   // level
+	line = one_argument(line, arg4, sizeof(arg4));   // empire
+	line = one_argument(line, arg5, sizeof(arg5));   // st
+	line = one_argument(line, arg6, sizeof(arg6));   // ht
+	line = one_argument(line, arg7, sizeof(arg7));   // dx
+	line = one_argument(line, arg8, sizeof(arg8));   // iq
+	line = one_argument(line, arg9, sizeof(arg9));   // alignment
+	line = one_argument(line, arg10, sizeof(arg10)); // guild_id
+	one_argument(line, arg11, sizeof(arg11));        // language
+
+	if (!*arg1 || !*arg2 || !*arg3 || !*arg4)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_create <name> <race> <level> <empire> [st] [ht] [dx] [iq] [alignment] [guild_id] [language]");
+		return;
+	}
+
+	std::string name = arg1;
+	int race = atoi(arg2);
+	int level = MINMAX(1, atoi(arg3), 120);
+	int empire = MINMAX(1, atoi(arg4), 3);
+	int st = *arg5 ? atoi(arg5) : 10;
+	int ht = *arg6 ? atoi(arg6) : 10;
+	int dx = *arg7 ? atoi(arg7) : 10;
+	int iq = *arg8 ? atoi(arg8) : 10;
+	int alignment = *arg9 ? atoi(arg9) : 0;
+	int guild_id = *arg10 ? atoi(arg10) : 0;
+	std::string language = *arg11 ? arg11 : "en";
+
+	// Validate name (no SQL injection, valid characters)
+	for (size_t i = 0; i < name.length(); ++i)
+	{
+		char c = name[i];
+		if (!isalnum(c) && c != '_')
+		{
+			ch->ChatPacket(CHAT_TYPE_INFO, "Invalid character in name. Use only alphanumeric and underscore.");
+			return;
+		}
+	}
+
+	if (name.length() > 24)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Name too long (max 24 characters).");
+		return;
+	}
+
+	// Check if name already exists
+	char szQuery[1024];
+	snprintf(szQuery, sizeof(szQuery), "SELECT name FROM fake_player WHERE name = '%s'", name.c_str());
+	std::unique_ptr<SQLMsg> pCheckMsg(DBManager::instance().DirectQuery(szQuery));
+	if (pCheckMsg->Get()->uiNumRows > 0)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' already exists.", name.c_str());
+		return;
+	}
+
+	// Insert into database
+	snprintf(szQuery, sizeof(szQuery),
+		"INSERT INTO fake_player (name, race, level, empire, st, ht, dx, iq, alignment, block_eq, guild_id, copy_eq_of, language) "
+		"VALUES ('%s', %d, %d, %d, %d, %d, %d, %d, %d, 0, %d, '', '%s')",
+		name.c_str(), race, level, empire, st, ht, dx, iq, alignment, guild_id, language.c_str());
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' created successfully.", name.c_str());
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerCreated %s", name.c_str());
+}
+
+ACMD(do_adminpanel_fakeplayer_create_random)
+{
+	char arg1[256];
+	char arg2[256];
+	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: /adminpanel_fakeplayer_create_random <count> [withEquipment]");
+		return;
+	}
+
+	int count = MINMAX(1, atoi(arg1), 999);
+	int withEquipment = *arg2 ? atoi(arg2) : 0;
+	int created = 0;
+
+	// Prefixes and suffixes for random nicknames
+	const char* prefixes[] = {"Bot", "Fake", "Test", "Auto", "Npc", "Sys", "Ai", "Proto", "Sim", "Virtual"};
+	const char* suffixes[] = {"Player", "User", "Char", "Hero", "Unit", "Agent", "Bot", "Mob", "Ent", "Obj"};
+	const int numPrefixes = sizeof(prefixes) / sizeof(prefixes[0]);
+	const int numSuffixes = sizeof(suffixes) / sizeof(suffixes[0]);
+
+	// Get item prototypes for equipment generation
+	std::vector<TItemTable>& items = ITEM_MANAGER::instance().GetVecProto();
+
+	for (int i = 0; i < count; ++i)
+	{
+		// Generate unique nickname
+		char name[25];
+		bool nameExists = true;
+		int attempts = 0;
+		const int maxAttempts = 100;
+
+		while (nameExists && attempts < maxAttempts)
+		{
+			int prefixIdx = number(0, numPrefixes - 1);
+			int suffixIdx = number(0, numSuffixes - 1);
+			int randomNum = number(1, 9999);
+
+			snprintf(name, sizeof(name), "%s%s%d", prefixes[prefixIdx], suffixes[suffixIdx], randomNum);
+
+			// Check if name exists in database
+			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
+				"SELECT COUNT(*) FROM fake_player WHERE name = '%s'", name));
+
+			if (pMsg->Get()->uiNumRows > 0)
+			{
+				MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+				if (row && row[0] && atoi(row[0]) == 0)
+				{
+					nameExists = false;
+				}
+			}
+			attempts++;
+		}
+
+		if (nameExists)
+		{
+			ch->ChatPacket(CHAT_TYPE_INFO, "Failed to generate unique name after %d attempts.", maxAttempts);
+			continue;
+		}
+
+		// Random parameters
+		int race = number(1, 8);  // ENUM is 1-indexed in MySQL
+		int level = number(1, 120);
+		int empire = number(1, 3);
+		int st = number(6, 20);
+		int ht = number(6, 20);
+		int dx = number(6, 20);
+		int iq = number(6, 20);
+		int alignment = 0;
+		int guild_id = 0;
+		const char* language = "en";
+
+		// Insert into database
+		DBManager::instance().DirectQuery(
+			"INSERT INTO fake_player (name, race, level, empire, st, ht, dx, iq, alignment, block_eq, guild_id, copy_eq_of, language) "
+			"VALUES ('%s', %d, %d, %d, %d, %d, %d, %d, %d, 0, %d, '', '%s')",
+			name, race, level, empire, st, ht, dx, iq, alignment, guild_id, language);
+
+		// Generate random equipment if requested
+		if (withEquipment)
+		{
+			auto PickRefineLevel = []() -> int
+			{
+				// Weighted chance for +0..+9 (sum = 100). High chance for +9.
+				int r = number(1, 100);
+				if (r <= 58) return 9;
+				if (r <= 71) return 8;
+				if (r <= 79) return 7;
+				if (r <= 85) return 6;
+				if (r <= 90) return 5;
+				if (r <= 94) return 4;
+				if (r <= 96) return 3;
+				if (r <= 98) return 2;
+				if (r <= 99) return 1;
+				return 0;
+			};
+
+			// Lookup table for MySQL ENUM: race index -> (job, isMale)
+			// ENUM order: WARRIOR_M(1), ASSASSIN_W(2), SURA_M(3), SHAMAN_W(4),
+			//             WARRIOR_W(5), ASSASSIN_M(6), SURA_W(7), SHAMAN_M(8)
+			struct RaceInfo {
+				int job;
+				bool isMale;
+			};
+
+			static const RaceInfo raceInfoTable[] = {
+				{-1,           false},  // 0 - invalid (unused)
+				{JOB_WARRIOR,  true},   // 1 - WARRIOR_M
+				{JOB_ASSASSIN, false},  // 2 - ASSASSIN_W
+				{JOB_SURA,     true},   // 3 - SURA_M
+				{JOB_SHAMAN,   false},  // 4 - SHAMAN_W
+				{JOB_WARRIOR,  false},  // 5 - WARRIOR_W
+				{JOB_ASSASSIN, true},   // 6 - ASSASSIN_M
+				{JOB_SURA,     false},  // 7 - SURA_W
+				{JOB_SHAMAN,   true},   // 8 - SHAMAN_M
+			};
+
+			const RaceInfo& raceInfo = raceInfoTable[race];
+			int job = raceInfo.job;
+
+			DWORD jobAntiflag = 0;
+			switch (job)
+			{
+				case JOB_WARRIOR:  jobAntiflag = ITEM_ANTIFLAG_WARRIOR; break;
+				case JOB_ASSASSIN: jobAntiflag = ITEM_ANTIFLAG_ASSASSIN; break;
+				case JOB_SURA:     jobAntiflag = ITEM_ANTIFLAG_SURA; break;
+				case JOB_SHAMAN:   jobAntiflag = ITEM_ANTIFLAG_SHAMAN; break;
+			}
+
+			DWORD sexAntiflag = raceInfo.isMale ? ITEM_ANTIFLAG_MALE : ITEM_ANTIFLAG_FEMALE;
+
+			// Equipment slots to fill: body armor and weapon
+			struct EquipSlot {
+				int wearPos;
+				BYTE itemType;
+				BYTE itemSubType;  // 255 = any subtype
+			};
+
+			EquipSlot slots[] = {
+				{ WEAR_BODY,   ITEM_ARMOR,  ARMOR_BODY },
+				{ WEAR_WEAPON, ITEM_WEAPON, 255 },
+			};
+
+			for (size_t s = 0; s < sizeof(slots) / sizeof(slots[0]); ++s)
+			{
+				const EquipSlot& slot = slots[s];
+				std::vector<DWORD> validItems;
+
+				for (size_t j = 0; j < items.size(); ++j)
+				{
+					const TItemTable& item = items[j];
+
+					if (item.bType != slot.itemType)
+						continue;
+
+					if (slot.itemSubType != 255 && item.bSubType != slot.itemSubType)
+						continue;
+
+					// Check job antiflag (item cannot be used by this job)
+					if (item.dwAntiFlags & jobAntiflag)
+						continue;
+
+					// Check sex antiflag
+					if (item.dwAntiFlags & sexAntiflag)
+						continue;
+
+					// Check level limit
+					bool levelOk = true;
+					for (int l = 0; l < ITEM_LIMIT_MAX_NUM; ++l)
+					{
+						if (item.aLimits[l].bType == LIMIT_LEVEL && item.aLimits[l].lValue > level)
+						{
+							levelOk = false;
+							break;
+						}
+					}
+					if (!levelOk)
+						continue;
+
+					// Skip items that cannot be picked up
+					if (item.dwAntiFlags & ITEM_ANTIFLAG_GET)
+						continue;
+
+					validItems.push_back(item.dwVnum);
+				}
+
+				if (!validItems.empty())
+				{
+					DWORD selectedVnum = validItems[number(0, validItems.size() - 1)];
+					int refineLevel = PickRefineLevel();
+
+					// Walk refine chain to reach desired +level (if available)
+					DWORD refinedVnum = selectedVnum;
+					for (int rl = 0; rl < refineLevel; ++rl)
+					{
+						const TItemTable* pTable = ITEM_MANAGER::instance().GetTable(refinedVnum);
+						if (!pTable || pTable->dwRefinedVnum == 0)
+							break;
+						refinedVnum = pTable->dwRefinedVnum;
+					}
+
+					// Insert item without metin sockets (avoid invalid vnum in sockets)
+					DBManager::instance().DirectQuery(
+						"INSERT INTO fake_player_item (name, wear_pos, vnum, socket0, socket1, socket2, "
+						"socket3, socket4, socket5, attrtype0, attrvalue0, attrtype1, attrvalue1, "
+						"attrtype2, attrvalue2, attrtype3, attrvalue3, attrtype4, attrvalue4, "
+						"attrtype5, attrvalue5, attrtype6, attrvalue6) "
+						"VALUES ('%s', %d, %u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)",
+						name, slot.wearPos + 1, refinedVnum);
+				}
+			}
+		}
+
+		created++;
+	}
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "Created %d random fake player(s).", created);
+
+	// Refresh list for client
+	do_adminpanel_fakeplayer_list(ch, "", 0, 0);
+}
+
+ACMD(do_adminpanel_fakeplayer_delete)
+{
+	char arg1[256];
+	one_argument(argument, arg1, sizeof(arg1));
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_delete <name>");
+		return;
+	}
+
+	std::string name = arg1;
+
+	// If the fake player is active, logout first
+	if (CFakePlayerManager::Instance().IsFakePlayerActive(name))
+	{
+		CFakePlayerManager::Instance().FakePlayerLogout(name.c_str(), ch);
+	}
+
+	// Delete items first (foreign key constraint)
+	char szQuery[512];
+	snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player_item WHERE name = '%s'", name.c_str());
+	DBManager::instance().DirectQuery(szQuery);
+
+	// Delete fake player
+	snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player WHERE name = '%s'", name.c_str());
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+
+	if (pMsg->Get()->uiAffectedRows > 0)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' deleted successfully.", name.c_str());
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerDeleted %s", name.c_str());
+	}
+	else
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' not found.", name.c_str());
+	}
+}
+
+ACMD(do_adminpanel_fakeplayer_delete_all)
+{
+    char arg1[256];
+    one_argument(argument, arg1, sizeof(arg1));
+
+    // Sprawdzamy czy wpisano "all"
+    if (strcasecmp(arg1, "all"))
+    {
+        ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_delete_all all");
+        return;
+    }
+
+    // Jeśli są aktywni fake playerzy, wyloguj ich i przerwij kasowanie
+    std::vector<std::pair<std::string, LPCHARACTER>> vecActive;
+    CFakePlayerManager::Instance().GetActiveFakePlayers(vecActive);
+    if (!vecActive.empty())
+    {
+        for (const auto& pair : vecActive)
+            CFakePlayerManager::Instance().FakePlayerLogout(pair.first.c_str(), ch);
+
+        ch->ChatPacket(CHAT_TYPE_INFO, "Logging out %d fake player(s). Run the command again after they logout.", (int)vecActive.size());
+        return;
+    }
+
+    char szQuery[512];
+
+    // Usuwanie przedmiotów
+    snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player_item");
+    DBManager::instance().DirectQuery(szQuery);
+
+    // Usuwanie fake playerów
+    snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player");
+    DBManager::instance().DirectQuery(szQuery);
+
+    ch->ChatPacket(CHAT_TYPE_INFO, "All fake players and items deleted.");
+    ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerDeleted ALL");
+}
+
+ACMD(do_adminpanel_fakeplayer_update)
+{
+	// Arguments: name field value
+	char arg1[256], arg2[256], arg3[256];
+	const char* line = one_argument(argument, arg1, sizeof(arg1));  // name
+	line = one_argument(line, arg2, sizeof(arg2));  // field
+	one_argument(line, arg3, sizeof(arg3));  // value
+
+	if (!*arg1 || !*arg2 || !*arg3)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_update <name> <field> <value>");
+		return;
+	}
+
+	std::string name = arg1;
+	std::string field = arg2;
+	std::string value = arg3;
+
+	// Whitelist of allowed fields
+	const char* allowedFields[] = {
+		"race", "level", "empire", "st", "ht", "dx", "iq",
+		"alignment", "guild_id", "language", "block_eq", NULL
+	};
+
+	bool fieldAllowed = false;
+	for (int i = 0; allowedFields[i] != NULL; ++i)
+	{
+		if (field == allowedFields[i])
+		{
+			fieldAllowed = true;
+			break;
+		}
+	}
+
+	if (!fieldAllowed)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Invalid field. Allowed: race, level, empire, st, ht, dx, iq, alignment, guild_id, language, block_eq");
+		return;
+	}
+
+	char szQuery[512];
+	if (field == "language")
+	{
+		snprintf(szQuery, sizeof(szQuery), "UPDATE fake_player SET %s = '%s' WHERE name = '%s'",
+			field.c_str(), value.c_str(), name.c_str());
+	}
+	else
+	{
+		int intValue = atoi(value.c_str());
+		snprintf(szQuery, sizeof(szQuery), "UPDATE fake_player SET %s = %d WHERE name = '%s'",
+			field.c_str(), intValue, name.c_str());
+	}
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+
+	if (pMsg->Get()->uiAffectedRows > 0)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' updated: %s = %s", name.c_str(), field.c_str(), value.c_str());
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerUpdated %s %s %s", name.c_str(), field.c_str(), value.c_str());
+	}
+	else
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' not found or no change made.", name.c_str());
+	}
+}
+
+ACMD(do_adminpanel_fakeplayer_login)
+{
+	// Arguments: name [map_index x y rotation]
+	char arg1[256], arg2[256], arg3[256], arg4[256], arg5[256];
+	const char* line = one_argument(argument, arg1, sizeof(arg1));  // name
+	line = one_argument(line, arg2, sizeof(arg2));  // map_index (optional)
+	line = one_argument(line, arg3, sizeof(arg3));  // x (optional)
+	line = one_argument(line, arg4, sizeof(arg4));  // y (optional)
+	one_argument(line, arg5, sizeof(arg5));  // rotation (optional)
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_login <name> [map_index x y rotation]");
+		return;
+	}
+
+	std::string name = arg1;
+
+	// Check if already active
+	if (CFakePlayerManager::Instance().IsFakePlayerActive(name))
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' is already logged in.", name.c_str());
+		return;
+	}
+
+	TFakePlayerLoginData fakePlayerLoginData;
+	strlcpy(fakePlayerLoginData.szName, name.c_str(), sizeof(fakePlayerLoginData.szName));
+
+	// Use provided coordinates or GM's position
+	if (*arg2 && *arg3 && *arg4)
+	{
+		fakePlayerLoginData.lMapIndex = atol(arg2);
+		fakePlayerLoginData.lX = atol(arg3);
+		fakePlayerLoginData.lY = atol(arg4);
+		fakePlayerLoginData.iRotation = *arg5 ? atoi(arg5) : 0;
+	}
+	else
+	{
+		fakePlayerLoginData.lMapIndex = ch->GetMapIndex();
+		fakePlayerLoginData.lX = ch->GetX() + number(-500, 500);
+		fakePlayerLoginData.lY = ch->GetY() + number(-500, 500);
+		fakePlayerLoginData.iRotation = ch->GetRotation();
+	}
+
+	CFakePlayerManager::Instance().FakePlayerLogin(ch, &fakePlayerLoginData);
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerLoggedIn %s", name.c_str());
+}
+
+ACMD(do_adminpanel_fakeplayer_logout)
+{
+	char arg1[256];
+	one_argument(argument, arg1, sizeof(arg1));
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_logout <name>");
+		return;
+	}
+
+	std::string name = arg1;
+
+	if (!CFakePlayerManager::Instance().IsFakePlayerActive(name))
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' is not logged in.", name.c_str());
+		return;
+	}
+
+	CFakePlayerManager::Instance().FakePlayerLogout(name.c_str(), ch);
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerLoggedOut %s", name.c_str());
+}
+
+ACMD(do_adminpanel_fakeplayer_logout_all)
+{
+	std::vector<std::pair<std::string, LPCHARACTER>> vecActive;
+	CFakePlayerManager::Instance().GetActiveFakePlayers(vecActive);
+
+	int count = 0;
+	for (const auto& pair : vecActive)
+	{
+		CFakePlayerManager::Instance().FakePlayerLogout(pair.first.c_str(), nullptr);
+		count++;
+	}
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "Logged out %d fake players.", count);
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerLogoutAll %d", count);
+}
+
+ACMD(do_adminpanel_fakeplayer_item_list)
+{
+	char arg1[256];
+	one_argument(argument, arg1, sizeof(arg1));
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_item_list <name>");
+		return;
+	}
+
+	std::string name = arg1;
+
+	char szQuery[1024];
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT wear_pos+0, vnum, socket0, socket1, socket2, socket3, socket4, socket5, "
+		"attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
+		"attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5, "
+		"attrtype6, attrvalue6 FROM fake_player_item WHERE name = '%s' ORDER BY wear_pos", name.c_str());
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+	if (!pMsg->Get()->pSQLResult)
+	{
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerItemList %s 0", name.c_str());
+		return;
+	}
+
+	MYSQL_ROW row;
+	std::string result = "";
+	int count = 0;
+
+	while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
+	{
+		if (count > 0)
+			result += " ";
+
+		char buf[512];
+		snprintf(buf, sizeof(buf), "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+			row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
+			row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15],
+			row[16], row[17], row[18], row[19], row[20], row[21]);
+		result += buf;
+		count++;
+	}
+
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerItemList %s %d %s", name.c_str(), count, result.c_str());
+}
+
+ACMD(do_adminpanel_fakeplayer_item_add)
+{
+	// Arguments: name wear_pos vnum socket0 socket1 socket2 attrtype0 attrvalue0 ... attrtype6 attrvalue6
+	char args[20][256];
+	const char* line = argument;
+
+	for (int i = 0; i < 20; ++i)
+	{
+		line = one_argument(line, args[i], sizeof(args[i]));
+	}
+
+	if (!*args[0] || !*args[1] || !*args[2])
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_item_add <name> <wear_pos> <vnum> [socket0-2] [attrtype0-6 attrvalue0-6]");
+		return;
+	}
+
+	std::string name = args[0];
+	int wear_pos = atoi(args[1]);
+	DWORD vnum = atoi(args[2]);
+
+	long socket0 = *args[3] ? atol(args[3]) : 0;
+	long socket1 = *args[4] ? atol(args[4]) : 0;
+	long socket2 = *args[5] ? atol(args[5]) : 0;
+
+	int attrtype[7], attrvalue[7];
+	for (int i = 0; i < 7; ++i)
+	{
+		attrtype[i] = *args[6 + i*2] ? atoi(args[6 + i*2]) : 0;
+		attrvalue[i] = *args[7 + i*2] ? atoi(args[7 + i*2]) : 0;
+	}
+
+	// Delete existing item at this position
+	char szQuery[2048];
+	snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player_item WHERE name = '%s' AND wear_pos = %d", name.c_str(), wear_pos);
+	DBManager::instance().DirectQuery(szQuery);
+
+	// Insert new item
+	snprintf(szQuery, sizeof(szQuery),
+		"INSERT INTO fake_player_item (name, wear_pos, vnum, socket0, socket1, socket2, socket3, socket4, socket5, "
+		"attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, attrtype3, attrvalue3, "
+		"attrtype4, attrvalue4, attrtype5, attrvalue5, attrtype6, attrvalue6) "
+		"VALUES ('%s', %d, %u, %ld, %ld, %ld, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+		name.c_str(), wear_pos, vnum, socket0, socket1, socket2,
+		attrtype[0], attrvalue[0], attrtype[1], attrvalue[1], attrtype[2], attrvalue[2],
+		attrtype[3], attrvalue[3], attrtype[4], attrvalue[4], attrtype[5], attrvalue[5],
+		attrtype[6], attrvalue[6]);
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+
+	// If fake player is active, reload their equipment
+	if (CFakePlayerManager::Instance().IsFakePlayerActive(name))
+	{
+		CFakePlayerManager::Instance().ReloadFakePlayerItems(name);
+	}
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "Item added to fake player '%s' at position %d.", name.c_str(), wear_pos);
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerItemAdded %s %d %u", name.c_str(), wear_pos, vnum);
+}
+
+ACMD(do_adminpanel_fakeplayer_item_remove)
+{
+	char arg1[256], arg2[256];
+	const char* line = one_argument(argument, arg1, sizeof(arg1));  // name
+	one_argument(line, arg2, sizeof(arg2));  // wear_pos
+
+	if (!*arg1 || !*arg2)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_item_remove <name> <wear_pos>");
+		return;
+	}
+
+	std::string name = arg1;
+	int wear_pos = atoi(arg2);  // Client sends 1-based index
+
+	char szQuery[512];
+	snprintf(szQuery, sizeof(szQuery), "DELETE FROM fake_player_item WHERE name = '%s' AND wear_pos = %d", name.c_str(), wear_pos);
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+
+	// If fake player is active, unequip the item
+	if (CFakePlayerManager::Instance().IsFakePlayerActive(name))
+	{
+		LPCHARACTER pFakePlayer = CFakePlayerManager::Instance().FindFakePlayer(name);
+		if (pFakePlayer)
+		{
+			// Convert from 1-based (client) to 0-based (server) index
+			LPITEM pItem = pFakePlayer->GetWear(wear_pos - 1);
+			if (pItem)
+			{
+				pItem->RemoveFromCharacter();
+				M2_DESTROY_ITEM(pItem);
+			}
+		}
+	}
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "Item removed from fake player '%s' at position %d.", name.c_str(), wear_pos);
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerItemRemoved %s %d", name.c_str(), wear_pos);
+}
+
+ACMD(do_adminpanel_fakeplayer_get)
+{
+	char arg1[256];
+	one_argument(argument, arg1, sizeof(arg1));
+
+	if (!*arg1)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: adminpanel_fakeplayer_get <name>");
+		return;
+	}
+
+	std::string name = arg1;
+
+	char szQuery[1024];
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT name, race+0, level, empire+0, st, ht, dx, iq, alignment, guild_id, language, block_eq "
+		"FROM fake_player WHERE name = '%s'", name.c_str());
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+	if (!pMsg->Get()->uiNumRows)
+	{
+		ch->ChatPacket(CHAT_TYPE_INFO, "Fake player '%s' not found.", name.c_str());
+		return;
+	}
+
+	MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelFakeplayerGet %s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+		row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11]);
+}
+#endif

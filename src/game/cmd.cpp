@@ -234,6 +234,30 @@ ACMD (do_dragon_soul);
 ACMD (do_ds_list);
 ACMD (do_clear_affect);
 
+#ifdef __JACK_WRESTLER_FAKE_PLAYER__
+	ACMD (do_fake_player);
+	ACMD (do_adminpanel_fakeplayer_list);
+	ACMD (do_adminpanel_fakeplayer_active);
+	ACMD (do_adminpanel_fakeplayer_create);
+	ACMD (do_adminpanel_fakeplayer_delete);
+	ACMD (do_adminpanel_fakeplayer_delete_all);
+	ACMD (do_adminpanel_fakeplayer_update);
+	ACMD (do_adminpanel_fakeplayer_login);
+	ACMD (do_adminpanel_fakeplayer_logout);
+	ACMD (do_adminpanel_fakeplayer_logout_all);
+	ACMD (do_adminpanel_fakeplayer_item_list);
+	ACMD (do_adminpanel_fakeplayer_item_add);
+	ACMD (do_adminpanel_fakeplayer_item_remove);
+	ACMD (do_adminpanel_fakeplayer_get);
+	ACMD (do_adminpanel_fakeplayer_create_random);
+#endif
+#ifdef ENABLE_ASLAN_MODULAR_ADMIN_PANEL
+ACMD(do_adminpanel_get_player_count);
+#endif
+#ifdef ADMINPANEL_MOD_CREATE_ITEM_ASLAN
+ACMD(do_adminpanel_create_item);
+#endif
+
 struct command_info cmd_info[] =
 {
 	{ "!RESERVED!",	NULL,			0,			POS_DEAD,	GM_IMPLEMENTOR	}, /* 반드시 이 것이 처음이어야 한다. */
@@ -509,6 +533,30 @@ struct command_info cmd_info[] =
 	{ "dragon_soul",				do_dragon_soul,				0,	POS_DEAD,	GM_PLAYER	},
 	{ "ds_list",				do_ds_list,				0,	POS_DEAD,	GM_PLAYER	},
 	{ "do_clear_affect", do_clear_affect, 	0, POS_DEAD,		GM_LOW_WIZARD},
+	
+#ifdef __JACK_WRESTLER_FAKE_PLAYER__
+	{ "fake_player",				do_fake_player,					0,					POS_DEAD,		GM_IMPLEMENTOR		},
+	{ "adminpanel_fakeplayer_list",			do_adminpanel_fakeplayer_list,			0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_active",		do_adminpanel_fakeplayer_active,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_create",		do_adminpanel_fakeplayer_create,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_delete",		do_adminpanel_fakeplayer_delete,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_delete_all",	do_adminpanel_fakeplayer_delete_all,	0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_update",		do_adminpanel_fakeplayer_update,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_login",		do_adminpanel_fakeplayer_login,			0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_logout",		do_adminpanel_fakeplayer_logout,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_logout_all",	do_adminpanel_fakeplayer_logout_all,	0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_item_list",	do_adminpanel_fakeplayer_item_list,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_item_add",		do_adminpanel_fakeplayer_item_add,		0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_item_remove",	do_adminpanel_fakeplayer_item_remove,	0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_get",			do_adminpanel_fakeplayer_get,			0,		POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "adminpanel_fakeplayer_create_random", do_adminpanel_fakeplayer_create_random, 0,		POS_DEAD,	GM_IMPLEMENTOR	},
+#endif
+#ifdef ENABLE_ASLAN_MODULAR_ADMIN_PANEL
+	{ "adminpanel_get_player_count",			do_adminpanel_get_player_count,				0,		POS_DEAD,	GM_LOW_WIZARD	},
+#endif
+#ifdef ADMINPANEL_MOD_CREATE_ITEM_ASLAN
+	{ "adminpanel_create_item",			do_adminpanel_create_item,			0,				POS_DEAD,		GM_IMPLEMENTOR },
+#endif
 
 	{ "\n",		NULL,			0,			POS_DEAD,	GM_IMPLEMENTOR	}  /* 반드시 이 것이 마지막이어야 한다. */
 };
