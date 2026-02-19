@@ -652,7 +652,10 @@ ACMD(do_mob_map)
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ch->GetMapIndex());
 
 	if (tch)
+	{
 		ch->ChatPacket(CHAT_TYPE_INFO, "%s spawned in %dx%d", tch->GetName(), tch->GetX(), tch->GetY());
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "AdminpanelSpawnMapSignal %d %d", tch->GetX(), tch->GetY());
+	}
 	else
 		ch->ChatPacket(CHAT_TYPE_INFO, "Spawn failed.");
 }
