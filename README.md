@@ -1,4 +1,6 @@
 # m2dev-server-src
+
+> Mapa architektury i przepływów cross-repo: [m2dev-docs](https://github.com/WojciechJa/m2dev-docs).
 [![build](https://github.com/d1str4ught/m2dev-server-src/actions/workflows/main.yml/badge.svg)](https://github.com/d1str4ught/m2dev-server-src/actions/workflows/main.yml)
 
 
