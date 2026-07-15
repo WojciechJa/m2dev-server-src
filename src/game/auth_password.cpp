@@ -15,6 +15,12 @@
 
 namespace
 {
+	bool EnsureSodiumInitialized()
+	{
+		static const bool initialized = sodium_init() >= 0;
+		return initialized;
+	}
+
 	bool HasPrefix(const char* value, const char* prefix)
 	{
 		return value && prefix && 0 == std::strncmp(value, prefix, std::strlen(prefix));
@@ -84,6 +90,12 @@ bool VerifyAccountPassword(
 {
 	EAccountPasswordHashAlgorithm detected = EAccountPasswordHashAlgorithm::UNKNOWN;
 	bool valid = false;
+	if (!EnsureSodiumInitialized())
+	{
+		if (algorithm)
+			*algorithm = detected;
+		return false;
+	}
 
 	if (plainPassword && storedHash && IsBcryptHash(storedHash))
 	{
