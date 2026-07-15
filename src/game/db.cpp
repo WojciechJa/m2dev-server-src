@@ -3,6 +3,7 @@
 #include "common/length.h"
 
 #include "db.h"
+#include "auth_password.h"
 
 #include "config.h"
 #include "desc_client.h"
@@ -267,7 +268,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					// PASSWORD('%s'), password, securitycode, social_id, id, status
 					char szEncrytPassword[45 + 1];
-					char szPassword[45 + 1];
+					char szPassword[255 + 1];
 					char szSocialID[SOCIAL_ID_MAX_LEN + 1];
 					char szStatus[ACCOUNT_STATUS_MAX_LEN + 1];
 					DWORD dwID = 0;
@@ -360,9 +361,19 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						}
 					}
 
-					int nPasswordDiff = strcmp(szEncrytPassword, szPassword);
+					EAccountPasswordHashAlgorithm passwordAlgorithm =
+						EAccountPasswordHashAlgorithm::UNKNOWN;
+					const bool passwordValid = VerifyAccountPassword(
+						pinfo->passwd,
+						szEncrytPassword,
+						szPassword,
+						&passwordAlgorithm);
+					sys_log(0, "AUTH: login=%s password_algorithm=%s result=%s",
+						pinfo->login,
+						GetAccountPasswordHashAlgorithmName(passwordAlgorithm),
+						passwordValid ? "success" : "failure");
 
-					if (nPasswordDiff)
+					if (!passwordValid)
 					{
 						RecordLoginFailure(d->GetHostName());
 						LoginFailure(d, "WRONGPWD");

@@ -24,6 +24,7 @@ jobs:
           cd build
           cmake ..
           gmake all -j6
+          ctest --output-on-failure
     - name: Collect outputs
       run: |
         mkdir _output
