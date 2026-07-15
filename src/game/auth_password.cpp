@@ -6,11 +6,8 @@
 
 #include <sodium.h>
 
-#if defined(OS_LINUX) || defined(__linux__)
+#if defined(OS_LINUX) || defined(__linux__) || defined(OS_FREEBSD) || defined(__FreeBSD__)
 #include <crypt.h>
-#define M2DEV_HAS_SYSTEM_CRYPT 1
-#elif defined(OS_FREEBSD) || defined(__FreeBSD__)
-#include <unistd.h>
 #define M2DEV_HAS_SYSTEM_CRYPT 1
 #endif
 

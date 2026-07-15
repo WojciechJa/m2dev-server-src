@@ -18,13 +18,14 @@ jobs:
         usesh: true
         sync: sshfs
         prepare: |
-          pkg install -y git cmake gmake
+          pkg install -y git cmake gmake pkgconf libxcrypt
         run: |
           mkdir build
           cd build
           cmake ..
-          gmake all -j6
+          gmake auth_password_test -j6
           ctest --output-on-failure
+          gmake all -j6
     - name: Collect outputs
       run: |
         mkdir _output
