@@ -61,7 +61,7 @@ int main()
 
 #if defined(OS_FREEBSD) || defined(OS_LINUX) || defined(__FreeBSD__) || defined(__linux__)
 	// Portable PHP-compatible bcrypt test vector for the plaintext "password".
-	const char* bcryptHash = "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.";
+	const char* bcryptHash = "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi.";
 	passed &= Expect(
 		VerifyAccountPassword("password", nullptr, bcryptHash, &algorithm),
 		"PHP bcrypt hash should match");
