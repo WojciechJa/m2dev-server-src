@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <mutex>
+#include <string>
 
 #include <sodium.h>
 
@@ -53,12 +54,18 @@ namespace
 	bool VerifyBcrypt(const char* plainPassword, const char* storedHash)
 	{
 #if defined(M2DEV_HAS_SYSTEM_CRYPT)
+		// PHP emits $2y$, while FreeBSD crypt(3) accepts the equivalent $2b$
+		// revision. Only the revision marker changes; the salt and checksum do not.
+		std::string cryptHash(storedHash);
+		if (HasPrefix(storedHash, "$2y$"))
+			cryptHash[2] = 'b';
+
 		// crypt() owns a process-global result buffer. Serialize access and copy no
 		// secrets outside this scope. FreeBSD provides bcrypt through crypt().
 		static std::mutex s_cryptMutex;
 		std::lock_guard<std::mutex> lock(s_cryptMutex);
-		const char* result = crypt(plainPassword, storedHash);
-		return result && ConstantTimeEquals(result, storedHash);
+		const char* result = crypt(plainPassword, cryptHash.c_str());
+		return result && ConstantTimeEquals(result, cryptHash.c_str());
 #else
 		(void)plainPassword;
 		(void)storedHash;
